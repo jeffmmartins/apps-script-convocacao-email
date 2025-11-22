@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Convocação (E-mail)</title>
+    <!-- Carrega Tailwind CSS para estilização moderna e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuração do Tema Tailwind para usar a fonte Inter e arredondamento -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .h-screen-minus-gap {
+            min-height: calc(100vh - 40px);
+        }
+        /* Definição de Cores Padrão da SEFAZ */
+        .color-sefaz-main {
+            background-color: #047857; /* Verde Escuro Institucional */
+        }
+        .color-sefaz-hover {
+            background-color: #059669; /* Verde Mais Claro */
+        }
+        .color-sefaz-focus {
+            box-shadow: 0 0 0 4px rgba(4, 120, 87, 0.5); /* Sombra Verde */
+        }
+        .color-sefaz-panel-bg {
+            background-color: #F0FDF4; /* Verde Água Claro */
+        }
+        .color-sefaz-panel-border {
+            border-color: #34D399; /* Verde Água Mais Escuro */
+        }
+
+        /* Estilos específicos para os inputs para aplicar o foco verde */
+        .input-focus-green:focus {
+             border-color: #059669; /* Verde do Tailwind 600 */
+             box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.5); /* Sombra de Foco Verde */
+        }
+        
+        /* Estilo para o container de prévia HTML */
+        .preview-container {
+            min-height: 250px;
+            white-space: pre-wrap; /* Essencial para manter as quebras de linha do template string */
+            font-family: Arial, sans-serif; /* Mudar para uma fonte mais comum de e-mail */
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border: 2px dashed #34D399; /* Borda de prévia */
+            background-color: #f9f9f9;
+        }
+
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6 md:p-10 h-screen-minus-gap flex flex-col">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">
+            Gerador de Convocação (Disparo e Anexo) Sefaz/CE
+        </h1>
+        <p class="text-gray-600 mb-6">
+            **ATENÇÃO:** O disparo de e-mail requer autorização de **Gmail** e **Google Drive** na primeira execução.
+        </p>
+        
+        <!-- OPÇÕES DE ESCOLHA (TIPO DE DOCUMENTO E LEI) -->
+        <div class="mb-8 p-4 color-sefaz-panel-bg rounded-lg border color-sefaz-panel-border grid md:grid-cols-2 gap-6">
+            
+            <!-- 1. TIPO DE DOCUMENTO -->
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800 mb-3">1. Tipo de Documento</h2>
+                <div class="flex flex-col sm:flex-row gap-4" id="documento-options">
+                    <label class="inline-flex items-center cursor-pointer p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition">
+                        <input type="radio" name="tipoDocumento" value="aditivo" id="docAditivo" checked class="form-radio h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
+                        <span class="ml-2 text-sm font-medium text-gray-700">Termo Aditivo</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition">
+                        <input type="radio" name="tipoDocumento" value="contrato" id="docContrato" class="form-radio h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
+                        <span class="ml-2 text-sm font-medium text-gray-700">Contrato</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 2. LEI APLICÁVEL -->
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800 mb-3">2. Lei Aplicável</h2>
+                <div class="flex flex-col sm:flex-row gap-4" id="lei-options">
+                    <label class="inline-flex items-center cursor-pointer p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition">
+                        <input type="radio" name="tipoLei" value="8666" id="lei8666" checked class="form-radio h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
+                        <span class="ml-2 text-sm font-medium text-gray-700">Lei nº 8.666/93</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition">
+                        <input type="radio" name="tipoLei" value="14133" id="lei14133" class="form-radio h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">
+                        <span class="ml-2 text-sm font-medium text-gray-700">Lei nº 14.133/21</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- DESTINATÁRIOS E ANEXO -->
+        <div class="mb-8 p-4 color-sefaz-panel-bg rounded-lg border color-sefaz-panel-border">
+            <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-700" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h14a2 2 0 002-2V8.118z"/>
+                </svg>
+                Disparo e Anexo (Requer Permissão)
+            </h2>
+            <div class="grid md:grid-cols-3 gap-4">
+                <div class="md:col-span-1">
+                    <label for="emailPara" class="block text-sm font-medium text-gray-700 mb-1">E-mail(s) do Representante (Para) - Separe por vírgula</label>
+                    <input type="text" id="emailPara" value="representante@empresa.com" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm" required>
+                </div>
+                <div class="md:col-span-1">
+                    <label for="emailCC" class="block text-sm font-medium text-gray-700 mb-1">E-mail(s) para Cópia (Cc) - Separe por vírgula</label>
+                    <input type="text" id="emailCC" value="contratacao@sefaz.ce.gov.br" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm">
+                </div>
+                 <div class="md:col-span-1">
+                    <label for="emailCCO" class="block text-sm font-medium text-gray-700 mb-1">E-mail(s) para Cópia Oculta (Cco) - Separe por vírgula</label>
+                    <input type="text" id="emailCCO" value="" placeholder="Opcional" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm">
+                </div>
+                <div class="md:col-span-3">
+                    <label for="documentoDriveID" class="block text-sm font-medium text-gray-700 mb-1">ID/URL do PDF no Google Drive (Anexo)</label>
+                    <input type="text" id="documentoDriveID" placeholder="Cole o ID ou o link do arquivo PDF aqui." class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm" required>
+                    <p class="text-xs text-gray-500 mt-1">Ex: O link deve ser do formato `https://drive.google.com/file/d/ID_DO_ARQUIVO/...`. **O arquivo deve ser seu e estar no Drive.**</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- GUIA DE ENVIO DE E-MAIL (MANTIDO PARA INSTRUÇÃO) -->
+        <div class="mb-8 p-4 bg-yellow-100 rounded-lg border border-yellow-300 shadow-inner">
+            <h2 class="text-lg font-bold text-yellow-800 mb-2 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                Guia de Envio de E-mail (Protocolo Interno)
+            </h2>
+            <ul class="list-disc list-inside text-sm text-yellow-800 space-y-1">
+                <li><strong class="text-yellow-900">Para:</strong> E-mails dos representantes da empresa.</li>
+                <li><strong class="text-yellow-900">Cc:</strong> contratacao@sefaz.ce.gov.br.</li>
+                <li><strong class="text-yellow-900">Cco:</strong> Setorial responsável + gestor do contrato.</li>
+            </ul>
+        </div>
+
+        <!-- FORMULÁRIO DE ENTRADA DE DADOS -->
+        <div class="mb-8 border-b pb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">3. Dados de Identificação e Contrato</h2>
+            <div id="input-form" class="grid md:grid-cols-2 gap-6">
+                <!-- Nome do Representante -->
+                <div>
+                    <label for="nomeRepresentante" class="block text-sm font-medium text-gray-700 mb-1">Nome do Representante</label>
+                    <input type="text" id="nomeRepresentante" value="VICTOR SIMÃO BEDÊ" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm" required>
+                </div>
+                
+                <!-- Gênero do Representante -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Gênero (Para tratamento: Prezado/a)</label>
+                    <div class="flex gap-4 mt-2">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="generoRepresentante" value="masculino" checked class="form-radio h-4 w-4 text-green-600">
+                            <span class="ml-2 text-sm text-gray-700">Masculino (Senhor)</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="generoRepresentante" value="feminino" class="form-radio h-4 w-4 text-green-600">
+                            <span class="ml-2 text-sm text-gray-700">Feminino (Senhora)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Nome da Empresa -->
+                <div>
+                    <label for="nomeEmpresa" class="block text-sm font-medium text-gray-700 mb-1">Nome da Empresa</label>
+                    <input type="text" id="nomeEmpresa" value="SLS TERCEIRIZAÇÃO DE SERVIÇOS LTDA" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm" required>
+                </div>
+
+                <!-- CNPJ -->
+                <div>
+                    <label for="numeroCNPJ" class="block text-sm font-medium text-gray-700 mb-1">Número do CNPJ</label>
+                    <input type="text" id="numeroCNPJ" value="04.367.730/0001-86" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm" required>
+                </div>
+                <!-- Número do Contrato -->
+                <div>
+                    <label for="numeroContrato" class="block text-sm font-medium text-gray-700 mb-1">Número do Contrato (Ex: 073/2022)</label>
+                    <input type="text" id="numeroContrato" value="073/2022" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm" required>
+                </div>
+                <!-- Documento da Empresa (Dropdown) -->
+                <div>
+                    <label for="documentompresa" class="block text-sm font-medium text-gray-700 mb-1">Documento que outorga poderes (No texto será: ...de acordo com os termos **do/da**...)</label>
+                    <select id="documentompresa" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm bg-white" required>
+                        <option value="do Contrato Social" selected>do Contrato Social</option>
+                        <option value="do Ato Constitutivo">do Ato Constitutivo</option>
+                        <option value="do Estatuto">do Estatuto</option>
+                        <option value="do Registro Comercial">do Registro Comercial</option>
+                        <option value="da Procuração">da Procuração</option>
+                    </select>
+                </div>
+
+                <!-- NOVO CAMPO FIXO: INFORMAÇÕES DO OBJETO -->
+                <div class="md:col-span-2">
+                    <label for="informacoesObjeto" class="block text-sm font-medium text-gray-700 mb-1 mt-4">Informações do Objeto (Resumo)</label>
+                    <textarea id="informacoesObjeto" rows="2" class="w-full p-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm bg-white resize-y text-sm" placeholder="Ex: Contratação de serviços de limpeza, conservação ou prorrogação da vigência. Este campo é OBRIGATÓRIO."></textarea>
+                </div>
+                
+                <!-- Campos Dinâmicos (Contrato vs. Aditivo) -->
+                
+                <!-- Campos de Aditivo (Visível por padrão) -->
+                <div id="div-aditivo">
+                    <label for="numeroAditivo" class="block text-sm font-medium text-gray-700 mb-1">Número do Aditivo</label>
+                    <input type="number" id="numeroAditivo" value="9" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm">
+                </div>
+                
+                <!-- Campos de Contrato (Oculto por padrão) -->
+                <div id="div-contrato" class="hidden md:col-span-2 grid md:grid-cols-2 gap-6">
+                    
+                    <!-- Modalidade (Pregão/Cotação) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Modalidade do Processo</label>
+                        <div class="flex gap-4 mt-2">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="radio" name="modalidade" value="Pregão Eletrônico" checked class="form-radio h-4 w-4 text-green-600" id="modPregao">
+                                <span class="ml-2 text-sm text-gray-700">Pregão Eletrônico</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="radio" name="modalidade" value="Cotação Eletrônica" class="form-radio h-4 w-4 text-green-600" id="modCotacao">
+                                <span class="ml-2 text-sm text-gray-700">Cotação Eletrônica</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Número da Modalidade -->
+                    <div>
+                        <label for="numeroModalidade" class="block text-sm font-medium text-gray-700 mb-1">Número do Processo (Ex: 001/2024)</label>
+                        <input type="text" id="numeroModalidade" value="001/2024" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus-green transition duration-150 shadow-sm">
+                    </div>
+                    
+                    <!-- O campo objeto foi movido, deixando este div limpo -->
+
+                </div>
+            </div>
+        </div>
+        
+        <!-- BOTÃO DE AÇÃO -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+             <button id="btnEnviarEmail" class="py-3 px-6 text-white font-semibold rounded-lg shadow-lg bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 ease-in-out transform hover:scale-[1.02]">
+                ENVIAR E-MAIL AUTOMATICAMENTE
+            </button>
+            <button id="btnGerarEmail" class="py-3 px-6 text-white font-semibold rounded-lg shadow-lg color-sefaz-main hover:color-sefaz-hover focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 ease-in-out transform hover:scale-[1.02]">
+                Gerar Prévia (Negrito)
+            </button>
+        </div>
+
+        <!-- ÁREA DE SAÍDA -->
+        <div id="output-area" class="flex flex-col flex-grow">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3 border-b pb-1">4. Prévia do E-mail (Negrito Formatado):</h2>
+            
+            <!-- Mensagem de status/erro -->
+            <div id="messageBox" class="hidden p-3 mb-4 text-sm font-medium text-red-800 bg-red-100 rounded-lg border border-red-200" role="alert"></div>
+
+            <!-- INSTRUÇÃO DE CÓPIA -->
+            <div class="p-3 mb-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p class="text-xs text-yellow-800 font-semibold">
+                    ❗ **PARA COPIAR O TEXTO LIMPO:** Use sempre o botão <span class="text-green-700 font-bold">"Copiar Assunto e Corpo"</span> abaixo. Não copie o texto diretamente desta prévia para evitar o fundo cinza e formatação indesejada.
+                </p>
+            </div>
+
+
+            <!-- ELEMENTO para renderizar HTML com negrito -->
+            <div id="previewContainer" class="preview-container flex-grow w-full p-4 rounded-lg text-gray-800 text-sm">
+                Clique em 'Gerar Prévia' ou 'ENVIAR' para visualizar o e-mail formatado.
+            </div>
+
+            <!-- TEXTAREA OCULTA para armazenar o texto simples para cópia (Assunto + Corpo) -->
+            <textarea id="copyTextarea" rows="15" class="hidden"></textarea>
+            
+            <button id="btnCopiar" class="mt-4 py-2 px-4 text-white font-medium rounded-lg shadow color-sefaz-hover hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition duration-150 disabled:opacity-50" disabled>
+                Copiar Assunto e Corpo (Texto Simples para o E-mail)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Variável global para armazenar o Assunto e o Corpo do último e-mail gerado
+        let ultimaConvocacao = { assunto: '', corpo: '', htmlCorpo: '', textoCompletoSimples: '' };
+        
+        // --- 1. A LÓGICA DE NEGÓCIO (FÁBRICAS DE TEXTO) ---
+        
+        /**
+         * Gera o texto do e-mail de convocação. As variáveis críticas estão em NEGRITO (tags <b>) para HTML.
+         */
+        function gerarTextoConvocacao(data) {
+            const { 
+                nomeRepresentante, nomeEmpresa, numeroCNPJ, numeroAditivo, 
+                numeroContrato, documentompresa, tipoLei, tipoDocumento, 
+                modalidade, numeroModalidade, informacoesObjeto, tituloTratamento 
+            } = data;
+            
+            // Converte variáveis críticas para tags HTML <b> (negrito)
+            const ADITIVO_STR = `<b>${String(numeroAditivo).toUpperCase()}</b>`;
+            const CONTRATO = `<b>${numeroContrato.trim().toUpperCase()}</b>`;
+            const NOME_EMPRESA = `<b>${nomeEmpresa.trim().toUpperCase()}</b>`;
+            const CNPJ = `<b>${numeroCNPJ.trim().toUpperCase()}</b>`;
+            const DOCUMENTO = `<b>${documentompresa.trim().toUpperCase()}</b>`; // Ex: DO CONTRATO SOCIAL
+            const REPRESENTANTE = `<b>${nomeRepresentante.trim().toUpperCase()}</b>`;
+            
+            // Combina Modalidade e Número do Processo (Negrito)
+            const MODALIDADE_NOME = modalidade ? `<b>${modalidade.trim().toUpperCase()}</b>` : '';
+            const NUMERO_MODALIDADE = numeroModalidade ? `<b>${numeroModalidade.trim().toUpperCase()}</b>` : '';
+            const MODALIDADE_COMPLETA = `${MODALIDADE_NOME} ${NUMERO_MODALIDADE}`;
+
+            const OBJETO_INFO = informacoesObjeto ? informacoesObjeto.trim() : '';
+            const TITULO_TRATAMENTO = `<b>${tituloTratamento}</b>`;
+
+
+            let textoCorpoHTML = '';
+            let textoAssunto = '';
+            
+            // Função auxiliar para substituir negrito HTML por CAIXA ALTA no corpo simples
+            const toSimpleText = (html) => html.replace(/<br\s*\/?>/g, '\n').replace(/<\/?b>/g, '');
+            const quebraLinha = '<br/>'; // Usado para formatar HTML
+            const quebraLinhaDupla = quebraLinha + quebraLinha;
+
+
+            // =========================================================================
+            // LÓGICA DE ESCOLHA DO TEMPLATE: (TIPO DE DOCUMENTO E LEI)
+            // =========================================================================
+
+            if (tipoDocumento === 'contrato' && tipoLei === '14133') {
+                // 1. CONTRATO + LEI 14.133/21
+                textoAssunto = `Convocação para assinatura do CONTRATO ${CONTRATO.replace(/<\/?b>/g, '')} – SECRETARIA DA FAZENDA DO ESTADO DO CEARÁ - ${MODALIDADE_COMPLETA.replace(/<\/?b>/g, '')} – EMPRESA ${NOME_EMPRESA.replace(/<\/?b>/g, '')}`;
+
+                textoCorpoHTML = `
+${TITULO_TRATAMENTO} ${REPRESENTANTE},${quebraLinha}
+Representante da ${NOME_EMPRESA} - CNPJ: ${CNPJ}.${quebraLinha}
+${MODALIDADE_COMPLETA}.${quebraLinha}
+${quebraLinha}
+A Secretaria da Fazenda do Estado do Ceará (Sefaz/CE), por meio da sua Célula de Compras e Contratos (Cecoc), em observância ao estabelecido na Lei n.º 14.133, de 1° de abril de 2021, CONVOCA a empresa ${NOME_EMPRESA} para assinar o CONTRATO ${CONTRATO} que tem como objeto ${OBJETO_INFO}.${quebraLinhaDupla}
+Disponibilizamos o arquivo em formato .pdf para assinatura por certificado digital do representante da ${NOME_EMPRESA}, de acordo com os termos ${DOCUMENTO} que lhe outorga poderes.${quebraLinhaDupla}
+O CONTRATO ${CONTRATO} deverá ser assinado digitalmente pelo representante da contratada no prazo máximo de <b>5 (cinco) dias úteis</b>, a contar do recebimento deste comunicado sob pena de enquadramento no disposto no artigo 155, inciso VI, da Lei nº 14.133, de 1° de abril de 2021.${quebraLinhaDupla}
+Após o recolhimento da assinatura, favor enviar o documento assinado para o e-mail contratacao@sefaz.ce.gov.br para inicialização dos procedimentos de publicação do termo contratual.${quebraLinhaDupla}
+Fazemos votos de estima e consideração, colocamo-nos à disposição para sanar quaisquer dúvidas.${quebraLinhaDupla}
+Atenciosamente,
+  `.trim();
+            } 
+            else if (tipoDocumento === 'aditivo' && tipoLei === '8666') {
+                // 2. ADITIVO + LEI 8.666/93
+                textoAssunto = `Convocação para assinatura do ${ADITIVO_STR.replace(/<\/?b>/g, '')}º ADITIVO AO CONTRATO ${CONTRATO.replace(/<\/?b>/g, '')} – SECRETARIA DA FAZENDA DO ESTADO DO CEARÁ – ${NOME_EMPRESA.replace(/<\/?b>/g, '')}`;
+
+                textoCorpoHTML = `
+${TITULO_TRATAMENTO} ${REPRESENTANTE},${quebraLinha}
+Representante da ${NOME_EMPRESA}.${quebraLinhaDupla}
+A Secretaria da Fazenda do Estado do Ceará (Sefaz/CE), por meio da sua Célula de Compras e Contratos (Cecoc), em observância ao estabelecido na Lei n.º 8.666, de 21 de junho de 1993, CONVOCA a empresa ${NOME_EMPRESA}, inscrita no CNPJ sob o nº ${CNPJ}, para assinar o ${ADITIVO_STR}º ADITIVO AO CONTRATO ${CONTRATO}.${quebraLinhaDupla}
+Disponibilizamos o arquivo em formato .pdf para assinatura por certificado digital do representante legal da ${NOME_EMPRESA}, de acordo com os termos ${DOCUMENTO} que lhe outorga poderes.${quebraLinhaDupla}
+O ${ADITIVO_STR}º Aditivo ao Contrato ${CONTRATO} deverá ser assinado digitalmente pelo representante da contratada no prazo máximo de <b>5 (cinco) dias úteis</b>, a contar do recebimento deste comunicado sob pena de enquadramento no disposto no artigo 81 da Lei nº 8.666, de 21 de junho de 1993.${quebraLinhaDupla}
+Após o recolhimento da assinatura, favor enviar o documento assinado para o e-mail contratacao@sefaz.ce.gov.br para inicialização dos procedimentos de publicação do termo aditivo.${quebraLinhaDupla}
+Atenciosamente,
+  `.trim();
+
+            } 
+            else if (tipoDocumento === 'aditivo' && tipoLei === '14133') {
+                // 3. ADITIVO + LEI 14.133/21
+                textoAssunto = `Convocação para assinatura do ${ADITIVO_STR.replace(/<\/?b>/g, '')}º ADITIVO AO CONTRATO ${CONTRATO.replace(/<\/?b>/g, '')}– SECRETARIA DA FAZENDA DO ESTADO DO CEARÁ – ${NOME_EMPRESA.replace(/<\/?b>/g, '')}`;
+
+                textoCorpoHTML = `
+${TITULO_TRATAMENTO} ${REPRESENTANTE},${quebraLinha}
+Representante da ${NOME_EMPRESA}.${quebraLinhaDupla}
+A Secretaria da Fazenda do Estado do Ceará (Sefaz/CE), por meio da sua Célula de Compras e Contratos (Cecoc), em observância ao estabelecido na Lei n.º 14.133, de 1° de abril de 2021, CONVOCA a empresa ${NOME_EMPRESA}, inscrita no CNPJ sob o nº ${CNPJ}, para assinar o ${ADITIVO_STR}º ADITIVO AO CONTRATO ${CONTRATO}.${quebraLinhaDupla}
+Disponibilizamos o arquivo em formato .pdf para assinatura por certificado digital dos representantes legais da ${NOME_EMPRESA} de acordo com os termos ${DOCUMENTO} que outorga poder ao representante dessa empresa.${quebraLinhaDupla}
+O ${ADITIVO_STR}º aditivo ao Contrato ${CONTRATO} deverá ser assinado digitalmente pelo representante da contratada no prazo máximo de <b>5 (cinco) dias úteis</b>, a contar do recebimento deste comunicado sob pena de enquadramento no disposto no artigo 155, inciso VI, da Lei nº 14.133, de 1° de abril de 2021.${quebraLinhaDupla}
+Após o recolhimento da assinatura, favor enviar o documento assinado para o e-mail contratacao@sefaz.ce.gov.br para inicialização dos procedimentos de publicação do termo aditivo.${quebraLinhaDupla}
+Fazemos votos de estima e consideração, colocamo-nos à disposição para sanar quaisquer dúvidas.${quebraLinhaDupla}
+Atenciosamente,
+  `.trim();
+            }
+            else if (tipoDocumento === 'contrato' && tipoLei === '8666') {
+                 // 4. CONTRATO + LEI 8.666/93
+                textoAssunto = `Convocação para assinatura do CONTRATO ${CONTRATO.replace(/<\/?b>/g, '')} – SECRETARIA DA FAZENDA DO ESTADO DO CEARÁ - ${MODALIDADE_COMPLETA.replace(/<\/?b>/g, '')} – EMPRESA ${NOME_EMPRESA.replace(/<\/?b>/g, '')}`;
+
+                textoCorpoHTML = `
+${TITULO_TRATAMENTO} ${REPRESENTANTE},${quebraLinha}
+Representante da ${NOME_EMPRESA} - CNPJ: ${CNPJ}.${quebraLinha}
+${MODALIDADE_COMPLETA}.${quebraLinhaDupla}
+A Secretaria da Fazenda do Estado do Ceará (Sefaz/CE), por meio da sua Célula de Compras e Contratos (Cecoc), em observância ao estabelecido na Lei n.º 8.666, de 21 de junho de 1993, CONVOCA a empresa ${NOME_EMPRESA} para assinar o CONTRATO ${CONTRATO} que tem como objeto ${OBJETO_INFO}.${quebraLinhaDupla}
+Disponibilizamos o arquivo em formato .pdf para assinatura por certificado digital do representante da ${NOME_EMPRESA}, de acordo com os termos ${DOCUMENTO} que lhe outorga poderes.${quebraLinhaDupla}
+O CONTRATO ${CONTRATO} deverá ser assinado digitalmente pelo representante da contratada no prazo máximo de <b>5 (cinco) dias úteis</b>, a contar do recebimento deste comunicado sob pena de enquadramento no disposto no artigo 81 da Lei nº 8.666, de 21 de junho de 1993.${quebraLinhaDupla}
+Após o recolhimento da assinatura, favor enviar o documento assinado para o e-mail contratacao@sefaz.gov.br para inicialização dos procedimentos de publicação do termo contratual.${quebraLinhaDupla}
+Fazemos votos de estima e consideração, colocamo-nos à disposição para sanar quaisquer dúvidas.${quebraLinhaDupla}
+Atenciosamente,
+  `.trim();
+            }
+            
+            // O texto simples é usado para a cópia (o HTML é limpo de tags)
+            const corpoSimples = toSimpleText(textoCorpoHTML);
+
+            return { 
+                assunto: toSimpleText(textoAssunto), // Assunto sem tags
+                corpoSimples: corpoSimples, 
+                htmlCorpo: textoCorpoHTML, // Corpo HTML formatado
+                // Cria a string completa para cópia
+                textoCompletoSimples: `Assunto do email: ${toSimpleText(textoAssunto)}\n\n${corpoSimples}` 
+            };
+        }
+
+        // --- 2. FUNÇÕES DE INTERFACE (UI) ---
+        
+        const btnGerarEmail = document.getElementById('btnGerarEmail');
+        const btnEnviarEmail = document.getElementById('btnEnviarEmail');
+        const btnCopiar = document.getElementById('btnCopiar');
+        const previewContainer = document.getElementById('previewContainer'); // NOVO ELEMENTO
+        const copyTextarea = document.getElementById('copyTextarea'); // TEXTAREA OCULTA
+        const messageBox = document.getElementById('messageBox');
+        const divAditivo = document.getElementById('div-aditivo');
+        const divContrato = document.getElementById('div-contrato');
+        
+        // Listeners para os Rádios
+        const radioDocs = document.querySelectorAll('input[name="tipoDocumento"]');
+        const radioLeis = document.querySelectorAll('input[name="tipoLei"]');
+        const radioGeneros = document.querySelectorAll('input[name="generoRepresentante"]');
+        const radioModalidades = document.querySelectorAll('input[name="modalidade"]');
+
+
+        /** Limpa a caixa de mensagens */
+        function clearMessage() {
+            messageBox.textContent = '';
+            messageBox.classList.add('hidden');
+        }
+
+        /** Exibe uma mensagem de erro ou sucesso */
+        function showMessage(text, isError = true) {
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden');
+            if (isError) {
+                messageBox.classList.remove('text-green-800', 'bg-green-100', 'border-green-200');
+                messageBox.classList.add('text-red-800', 'bg-red-100', 'border-red-200');
+            } else {
+                messageBox.classList.remove('text-red-800', 'bg-red-100', 'border-red-200');
+                messageBox.classList.add('text-green-800', 'bg-green-100', 'border-green-200');
+            }
+            messageBox.classList.add('border');
+        }
+        
+        /** Coleta todos os dados do formulário em um objeto */
+        function coletarDados() {
+            const tipoDocumento = document.querySelector('input[name="tipoDocumento"]:checked').value;
+            const tipoLei = document.querySelector('input[name="tipoLei"]:checked').value;
+            const genero = document.querySelector('input[name="generoRepresentante"]:checked').value;
+            
+            // Determina a string de tratamento (Prezado Senhor / Prezada Senhora)
+            const tituloCortesia = (genero === 'feminino') ? 'Senhora' : 'Senhor';
+            const adjetivoCortesia = (genero === 'feminino') ? 'Prezada' : 'Prezado';
+            const tituloTratamento = `${adjetivoCortesia} ${tituloCortesia}`;
+
+            const dados = {
+                nomeRepresentante: document.getElementById('nomeRepresentante').value,
+                nomeEmpresa: document.getElementById('nomeEmpresa').value,
+                numeroCNPJ: document.getElementById('numeroCNPJ').value,
+                numeroContrato: document.getElementById('numeroContrato').value,
+                documentompresa: document.getElementById('documentompresa').value,
+                tipoLei: tipoLei,
+                tipoDocumento: tipoDocumento,
+                tituloTratamento: tituloTratamento, 
+                
+                // Campos de E-MAIL e DRIVE
+                emailPara: document.getElementById('emailPara').value,
+                emailCC: document.getElementById('emailCC').value,
+                emailCCO: document.getElementById('emailCCO').value, // NOVO CAMPO CCO
+                documentoDriveID: document.getElementById('documentoDriveID').value,
+                
+                // Campos dinâmicos:
+                numeroAditivo: (tipoDocumento === 'aditivo' && document.getElementById('numeroAditivo')) ? document.getElementById('numeroAditivo').value : null,
+                
+                // Campos de Contrato
+                modalidade: (tipoDocumento === 'contrato' && document.querySelector('input[name="modalidade"]:checked')) ? document.querySelector('input[name="modalidade"]:checked').value : null,
+                numeroModalidade: (tipoDocumento === 'contrato' && document.getElementById('numeroModalidade')) ? document.getElementById('numeroModalidade').value : null,
+                informacoesObjeto: document.getElementById('informacoesObjeto').value, // CAMPO OBJETO É SEMPRE COLETADO
+            };
+
+            // Validação
+            // Agora, informacoesObjeto é OBRIGATÓRIO, independentemente do tipo.
+            const camposObrigatorios = ['nomeRepresentante', 'nomeEmpresa', 'numeroCNPJ', 'numeroContrato', 'documentompresa', 'emailPara', 'documentoDriveID', 'informacoesObjeto'];
+            
+            // Valida campos principais (para envio/visualização, todos são obrigatórios)
+            for (const campo of camposObrigatorios) {
+                 if (!dados[campo].trim()) {
+                    return { isValid: false, message: `O campo '${campo}' é obrigatório.` };
+                }
+            }
+            
+            // Valida campos específicos
+            if (tipoDocumento === 'aditivo' && !dados.numeroAditivo.trim()) {
+                return { isValid: false, message: "Para Termo Aditivo, o Número do Aditivo é obrigatório." };
+            }
+            if (tipoDocumento === 'contrato' && (!dados.numeroModalidade.trim() || !dados.modalidade)) {
+                 return { isValid: false, message: "Para Contrato, a Modalidade e o Número do Processo são obrigatórios." };
+            }
+
+            return { isValid: true, data: dados };
+        }
+
+        /** Altera a visibilidade dos campos com base na escolha do Tipo de Documento. */
+        function toggleCampos() {
+            const tipoDocumento = document.querySelector('input[name="tipoDocumento"]:checked').value;
+            
+            // Oculta/Exibe os campos de Aditivo/Contrato
+            if (tipoDocumento === 'aditivo') {
+                divAditivo.classList.remove('hidden');
+                divContrato.classList.add('hidden');
+            } else { // contrato
+                divAditivo.classList.add('hidden');
+                divContrato.classList.remove('hidden');
+            }
+            
+            // Força a regeneração do texto
+            processarGeracao(false);
+        }
+
+        /** * Processa a geração do texto.
+         * @param {boolean} isSending - Se for true, o botão de Enviar foi pressionado.
+         */
+        function processarGeracao(isSending) {
+            clearMessage();
+            const resultado = coletarDados();
+
+            if (!resultado.isValid) {
+                showMessage(resultado.message, true);
+                previewContainer.innerHTML = 'Preencha todos os campos obrigatórios para gerar a prévia.';
+                copyTextarea.value = '';
+                btnCopiar.disabled = true;
+                btnEnviarEmail.disabled = true;
+                return;
+            }
+
+            const dados = resultado.data;
+            
+            // 1. Gera o texto completo (Assunto e Corpo em HTML e Simples)
+            const emailResult = gerarTextoConvocacao(dados);
+            
+            // Armazena para ser usado pela função de envio
+            ultimaConvocacao = { 
+                assunto: emailResult.assunto, 
+                corpo: emailResult.corpoSimples, // Corpo simples (fallback)
+                htmlCorpo: emailResult.htmlCorpo, // Corpo HTML para o disparo
+                para: dados.emailPara,
+                cc: dados.emailCC,
+                cco: dados.emailCCO,
+                documentoDriveID: dados.documentoDriveID
+            };
+
+            // 2. Atualiza a interface (visualização formatada)
+            const leiNome = dados.tipoLei === '14133' ? '14.133/21 (Nova)' : '8.666/93 (Antiga)';
+            const docTipo = dados.tipoDocumento === 'contrato' ? 'Contrato' : 'Termo Aditivo';
+
+            // Exibe a PRÉVIA HTML (com negrito) no container
+            previewContainer.innerHTML = `
+                <div class="mb-2"><b>Assunto:</b> ${emailResult.assunto}</div>
+                <hr class="mb-4 border-gray-300"/>
+                ${emailResult.htmlCorpo}
+            `;
+            // Armazena o texto completo (Assunto + Corpo Simples) para cópia
+            copyTextarea.value = emailResult.textoCompletoSimples;
+
+
+            btnCopiar.disabled = false;
+            btnCopiar.classList.remove('opacity-50');
+            btnEnviarEmail.disabled = false;
+
+
+            if (!isSending) {
+                showMessage(`Prévia gerada com sucesso para ${docTipo} e ${leiNome}.`, false);
+            }
+            
+            // 3. Se for um pedido de envio, chama a função do servidor
+            if (isSending) {
+                enviarEmail(ultimaConvocacao);
+            }
+        }
+        
+        // Função para ser chamada no servidor
+        function enviarEmail(emailData) {
+             btnEnviarEmail.disabled = true;
+             btnEnviarEmail.textContent = "ENVIANDO...";
+
+            if (typeof google === 'undefined' || typeof google.script === 'undefined' || typeof google.script.run === 'undefined') {
+                onEnvioFalha({message: "Erro de Conexão: A funcionalidade de envio automático só funciona quando o código é executado como um Aplicativo Web (Web App) implementado no Google Apps Script."});
+                return;
+            }
+
+            // O google.script.run é a ponte para o arquivo .gs
+            google.script.run
+                .withSuccessHandler(onEnvioSucesso)
+                .withFailureHandler(onEnvioFalha)
+                .enviarEmailConvocacao(emailData); // Chamada da função no Código.gs
+        }
+
+        // Handlers de sucesso e falha para feedback do usuário
+        function onEnvioSucesso(resposta) {
+             btnEnviarEmail.disabled = false;
+             btnEnviarEmail.textContent = "ENVIAR E-MAIL AUTOMATICAMENTE";
+             showMessage(`Sucesso! E-mail com negrito e anexo enviado para: ${resposta}.`, false);
+             // Limpa o campo do ID do Drive após o sucesso
+             document.getElementById('documentoDriveID').value = ''; 
+        }
+
+        function onEnvioFalha(erro) {
+             btnEnviarEmail.disabled = false;
+             btnEnviarEmail.textContent = "ENVIAR E-MAIL AUTOMATICAMENTE";
+             showMessage("Falha no envio. Verifique o ID/URL do Drive e se as permissões (Gmail/Drive) foram concedidas. Erro: " + erro.message, true);
+        }
+
+
+        /** Função para copiar o texto para a área de transferência. */
+        function copiarTexto() {
+            if (btnCopiar.disabled) return;
+            
+            // 1. Tenta focar e selecionar o texto da área oculta
+            const copyElement = document.getElementById('copyTextarea');
+            copyElement.select();
+            copyElement.setSelectionRange(0, 999999);
+            
+            let success = false;
+
+            try {
+                // 2. Executa o comando de cópia (método mais confiável em iframes/Apps Script)
+                success = document.execCommand('copy'); 
+            } catch (err) {
+                console.error('Erro ao executar copy:', err);
+            }
+            
+            // 3. Feedback ao usuário
+            if (success) {
+                showMessage("Conteúdo copiado (Texto Simples)! Agora cole no seu e-mail.", false);
+                btnCopiar.textContent = "COPIADO!";
+                setTimeout(() => {
+                    btnCopiar.textContent = "Copiar Assunto e Corpo (Texto Simples para o E-mail)";
+                    clearMessage();
+                }, 2000);
+            } else {
+                 // 4. Se a cópia falhar, instrui o usuário a copiar manualmente (CTRL+C)
+                showMessage("Falha na cópia automática. Por favor, use CTRL+C (ou clique com o botão direito > Copiar) para copiar o texto que está selecionado abaixo.", true);
+                 // O campo ainda estará selecionado (passo 1), facilitando a cópia manual.
+                copyElement.select(); 
+            }
+            
+            // 5. Limpa o foco e a seleção (para não confundir o usuário visualmente)
+            if (success) {
+                copyElement.setSelectionRange(0, 0);
+                copyElement.blur();
+            }
+        }
+        
+        // --- 3. INICIALIZAÇÃO DE EVENTOS ---
+        
+        // Listener para alternar campos (Aditivo/Contrato)
+        radioDocs.forEach(radio => radio.addEventListener('change', toggleCampos));
+        // Listener para regenerar o E-MAIL ao mudar as opções
+        radioModalidades.forEach(radio => radio.addEventListener('change', () => processarGeracao(false)));
+        radioLeis.forEach(radio => radio.addEventListener('change', () => processarGeracao(false)));
+        radioGeneros.forEach(radio => radio.addEventListener('change', () => processarGeracao(false)));
+
+        // Listeners para os botões de Ação
+        btnEnviarEmail.addEventListener('click', () => processarGeracao(true)); // Envia
+        btnGerarEmail.addEventListener('click', () => processarGeracao(false)); // Só Prévia
+        btnCopiar.addEventListener('click', copiarTexto);
+        
+        // Inicialização: Gera o E-mail inicial e ajusta os campos ao carregar.
+        window.addEventListener('load', () => {
+            toggleCampos(); // Garante que os campos dinâmicos estão corretos
+            processarGeracao(false);
+        });
+
+    </script>
+</body>
+</html>
